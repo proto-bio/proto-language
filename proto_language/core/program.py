@@ -145,6 +145,7 @@ class Program:
         verbose: bool = False,
         compute: ToolPool | None = None,
         seed: int | None = None,
+        device: str | None = None,
     ) -> None:
         """Initialize a Program with a list of optimizers to run sequentially.
 
@@ -164,6 +165,10 @@ class Program:
             seed (int | None): Random seed for fully reproducible optimization. When set,
                 derives unique optimizer config seeds, overriding optimizer-level
                 seeds. Same seed + same input = same output.
+            device (str | None): Device every tool call runs on, e.g. ``"modal"``. Applied to
+                generator and constraint configs, including tool configs they nest, leaving any
+                device set explicitly on a config alone. A remote device also skips the local
+                tool pool, which such a run would never use.
 
         Raises:
             ValueError: If optimizers list is empty or if optimizers don't share
@@ -174,16 +179,25 @@ class Program:
                 "Program requires at least one Optimizer (got empty list); pass optimizers=[opt1, opt2, ...] to chain stages"
             )
 
+        self.device = device
+
         if compute is None:
             from contextlib import nullcontext
 
             from proto_tools.tools.tool_registry import ToolRegistry
+            from proto_tools.utils.device import is_remote_device
             from proto_tools.utils.tool_pool import ToolPool
 
-            # A local ToolPool bypasses cloud dispatch, so skip it when external dispatch is configured.
+            # A local ToolPool bypasses remote dispatch, so skip it when the tools run elsewhere.
+            # Either an installed backend says so, or the program itself names a remote device —
+            # allocating local GPU workers for a run that never uses them helps nobody, and fails
+            # outright on a CPU-only host.
             has_backend = ToolRegistry.dispatch_backend_configured()
             if has_backend:
                 logger.debug("External dispatch configured; GPU tools will route to the hosted service.")
+                compute = nullcontext()
+            elif device is not None and is_remote_device(device):
+                logger.debug("Program device=%r; tools dispatch remotely, so no local pool is started.", device)
                 compute = nullcontext()
             else:
                 # Symmetric across GPU and CPU-only hosts.
@@ -205,6 +219,11 @@ class Program:
                 logger.warning(
                     f"{opt.__class__.__name__} num_results={opt.num_results} Overrides program num_results={self.num_results}"
                 )
+
+        # Flow device to optimizers, which apply it to their components at run time so a
+        # component attached after this point still picks it up.
+        for opt in self.optimizers:
+            opt.device = self.device
 
         # Flow seed to optimizers: program seed overrides optimizer-level seeds
         self.seed = seed

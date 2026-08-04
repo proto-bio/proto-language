@@ -196,6 +196,9 @@ class Optimizer(ABC):
         self.num_steps: int = 1
 
         self.seed = seed
+        # Set by Program when it carries a device; applied to components at run time so a
+        # component constructed after this optimizer still picks it up.
+        self.device: str | None = None
         self._rng = random.Random()  # noqa: S311 -- non-cryptographic
 
         # Create program-scoped tool cache
@@ -775,6 +778,16 @@ class Optimizer(ABC):
         for constraint in self.constraints:
             constraint._set_program_seed(next(child_seeds))
 
+    def _apply_program_device(self) -> None:
+        """Route this optimizer's generators and constraints to the program device, if one is set."""
+        device = getattr(self, "device", None)
+        if device is None:
+            return
+        for generator in self.generators:
+            generator._set_program_device(device)
+        for constraint in self.constraints:
+            constraint._set_program_device(device)
+
     def _prepare_run(self) -> None:
         """Call at start of run(). Validates state, captures on first run, restores on subsequent."""
         if self.num_results is None:
@@ -782,6 +795,7 @@ class Optimizer(ABC):
                 "num_results must be set. Set it via the optimizer config or use Program(num_results=...)."
             )
         self._reset_seed_state()
+        self._apply_program_device()
         if self._initial_state is None:
             self._capture_initial_state()
         else:

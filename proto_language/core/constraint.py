@@ -432,6 +432,15 @@ class Constraint:
         for config in (self._function_config, self._backward_config):
             apply(config)
 
+    def _set_program_device(self, device: str | None) -> None:
+        """Route this constraint's tool calls to ``device``, leaving explicit choices alone."""
+        if device is None:
+            return
+        from proto_language.utils.base import apply_device
+
+        for config in (self._function_config, self._backward_config):
+            apply_device(config, device)
+
     def evaluate(self, mask: list[bool] | None = None, verbose: bool = False) -> list[float] | list[bool]:
         """Evaluate the constraint on proposals using discrete scoring.
 

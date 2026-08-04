@@ -293,6 +293,24 @@ class Generator(ABC):
         """Set or clear the program-derived seed stream."""
         self._rng = None if seed is None else random.Random(seed)  # noqa: S311 -- non-cryptographic
 
+    def _set_program_device(self, device: str | None) -> None:
+        """Route this generator's tool calls to ``device``, leaving explicit choices alone.
+
+        Also refreshes a ``self.device`` attribute when one exists: generators copy
+        ``config.device`` onto the instance at construction and read it back at sample time, so
+        updating the config alone would be silently ignored.
+        """
+        if device is None:
+            return
+        from proto_language.utils.base import apply_device
+
+        config = getattr(self, "config", None)
+        if config is None:
+            return
+        apply_device(config, device)
+        if hasattr(self, "device"):
+            self.device = getattr(config, "device", device)
+
     def _next_seed(self) -> int | None:
         """Return an advancing per-call seed, or None if unseeded."""
         if self._rng is None:

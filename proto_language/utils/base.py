@@ -282,3 +282,33 @@ class BaseRegistry(ABC, Generic[SpecType]):
     def _component_type(cls) -> str:
         """Component type derived from the registry class name (e.g. ``MyRegistry`` → ``my``)."""
         return cls.__name__.replace("Registry", "").lower()
+
+
+def apply_device(target: Any, device: str, *, respect_explicit: bool = True) -> None:
+    """Set ``device`` on ``target`` and every config nested inside it.
+
+    Walks Pydantic models, dicts, and sequences the way the program seed does, so a device
+    reaches a tool config the component only holds indirectly — a constraint that nests an
+    ``Mmseqs2SearchProteinsConfig`` has no ``device`` field of its own.
+
+    Args:
+        target (Any): Config, container, or component attribute to walk.
+        device (str): Device string to apply, e.g. ``"modal"``.
+        respect_explicit (bool): Leave a field alone when the caller set it explicitly, so a
+            program can run remotely while one component stays pinned locally. Unlike the
+            program seed, which owns run determinism and overwrites unconditionally.
+    """
+    if isinstance(target, BaseModel):
+        fields = target.__class__.model_fields
+        if "device" in fields and not (respect_explicit and "device" in target.model_fields_set):
+            target.device = device  # type: ignore[attr-defined]
+        for field_name in fields:
+            apply_device(getattr(target, field_name), device, respect_explicit=respect_explicit)
+    elif isinstance(target, dict):
+        if "device" in target:
+            target["device"] = device
+        for child in target.values():
+            apply_device(child, device, respect_explicit=respect_explicit)
+    elif isinstance(target, (list, tuple)):
+        for child in target:
+            apply_device(child, device, respect_explicit=respect_explicit)
