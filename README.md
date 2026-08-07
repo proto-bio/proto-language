@@ -56,7 +56,7 @@ To override only the model-weights location, set `export PROTO_MODEL_CACHE=/path
 
 Some generators and constraints load gated models (for example ESM3, AlphaGenome, and AlphaFold3) that require accepting a license and authenticating with HuggingFace. Set `HF_TOKEN` in the environment after accepting each model's terms. See [`proto-tools/README.md`](https://github.com/evo-design/proto-tools#step-3-gated-model-access-optional-) for the full procedure and the list of gated models.
 
-### Step 4: Remote compute (optional) <a href="https://modal.com"><img src="proto-tools/guides/assets/modal/modal-logo.png" alt="Modal" height="20" align="center"></a>
+### Step 4: Remote compute (optional) <a href="https://modal.com"><img src="proto-tools/guides/assets/modal/modal-logo.png" alt="Modal" height="20" align="absmiddle"></a>
 
 Tools can execute in remote containers on [Modal](https://modal.com) instead of on your own machine, so a program can reach more GPUs than are installed locally. Deployments ship with proto-tools, so hosting one is a single command.
 
@@ -126,12 +126,12 @@ If you use Proto in your research, please cite our preprint:
 
 ## Acknowledgements
 
-Thank you to <a href="https://modal.com"><img src="https://github.com/modal-labs.png?size=40" alt="" height="16" align="center"> Modal</a>
+Thank you to <a href="https://modal.com"><img src="https://github.com/modal-labs.png?size=40" alt="" height="16" align="absmiddle"> Modal</a>
 for sponsoring the compute used to develop and test remote execution, and for making it
 straightforward to host the tools a program runs.
 
-Thank you to <a href="https://www.stanford.edu"><img src="https://www.stanford.edu/icon1.png" alt="" height="16" align="center"> Stanford University</a>
-and the <a href="https://arcinstitute.org"><img src="https://github.com/arcinstitute.png?size=40" alt="" height="16" align="center"> Arc Institute</a>
+Thank you to <a href="https://www.stanford.edu"><img src="https://www.stanford.edu/icon1.png" alt="" height="16" align="absmiddle"> Stanford University</a>
+and the <a href="https://arcinstitute.org"><img src="https://github.com/arcinstitute.png?size=40" alt="" height="16" align="absmiddle"> Arc Institute</a>
 for supporting this work's development.
 
 Thank you to everyone who has contributed to `proto-language`. Contributions of every size are
